@@ -85,33 +85,55 @@ const menuKeyboard = new InlineKeyboard()
 	.text('Удалить запись', 'delete')
 	.text('Изменить приоритет', 'priority').row()
 
+// Клавиатура списка задач с кнопкой "Вернуться в меню"
+const taskMenuKeyboard = new InlineKeyboard()
+	.text('Открыть список', 'todolist').row()
+	.text('Создать запись', 'create')
+	.text('Изменить запись', 'update').row()
+	.text('Удалить запись', 'delete')
+	.text('Изменить приоритет', 'priority').row()
+	.text('🏠 Вернуться в меню', 'main_menu');
 
+// Callback на todolist
+
+// Обработчик кнопки "Открыть список"
 bot.callbackQuery('todolist', async (ctx) => {
 	const db = await dbPromise;
 	const tasks = await db.all('SELECT * FROM todos WHERE user_id = ? ORDER BY priority DESC', [ctx.from.id]);
 
 	if (tasks.length === 0) {
-		await ctx.reply('Ваш список пуст.');
+		await ctx.editMessageText('Ваш список пуст.', {
+			reply_markup: { remove_keyboard: true }
+		});
 	} else {
 		let message = 'Ваши задачи:\n';
 		const taskKeyboard = new InlineKeyboard();
 
 		tasks.forEach((task, index) => {
-			// message += `${index + 1}. ${task.task}\n`;
-			taskKeyboard.text(task.task, `task_${task.id}`).row();  // Создаем кнопку для каждой задачи
+			taskKeyboard.text(task.task, `task_${task.id}`).row();
 		});
 
-		// Добавляем кнопку для создания новой задачи внизу списка
 		taskKeyboard.row();  // Разделяем ряд задач и кнопку добавления новой задачи
-		taskKeyboard.text('➕', 'create');
+		taskKeyboard.text('🆕', 'create');
+		taskKeyboard.row();  // Добавляем кнопку "Вернуться в меню"
+		taskKeyboard.text('↩️', 'main_menu');
 
-		await ctx.reply(message, {
+		await ctx.editMessageText(message, {
 			reply_markup: taskKeyboard,
 		});
 	}
 	console.log(`Пользователь ${ctx.from.username} и ID: ${ctx.from.id} запросил список задач`);
 });
 
+// Обработчик кнопки "Вернуться в меню"
+bot.callbackQuery('main_menu', async (ctx) => {
+	await ctx.editMessageText('*Нажмите кнопку*', {
+		parse_mode: 'MarkdownV2',
+		reply_markup: menuKeyboard
+	});
+
+	console.log(`Пользователь ${ctx.from.username} и ID: ${ctx.from.id} вернулся в главное меню.`);
+});
 
 
 // Callback create
