@@ -1,16 +1,22 @@
 // Соединяем бота
-require('dotenv').config(); // Подключения файла с приватками .env
-const { Bot, GrammyError, HttpError, InlineKeyboard, Keyboard } = require('grammy'); // Подключение библиотеки grammy
-const { session } = require("grammy"); // Подключение session в grammy
-const cron = require('node-cron'); // Подключение cron под расписание
-const axios = require('axios'); // Подключение axiois под fetch
-const sqlite3 = require('sqlite3').verbose(); // Подключение БД
-const sqlite = require('sqlite'); // Импортируем sqlite после sqlite3
-const { hydrate } = require('@grammyjs/hydrate'); // Подключаем hydrate на изменение в realtime
+import 'dotenv/config';  // Подключения файла с приватками.env
+import { Bot, GrammyError, HttpError, InlineKeyboard, Keyboard } from 'grammy'; // Подключение библиотеки grammy
+import { session } from "grammy"; // Подключение session в grammy
+import cron from 'node-cron'; // Подключение cron под расписание
+import axios from 'axios'; // Подключение axiois под fetch
+import sqlite3 from 'sqlite3'; // Подключение БД
+import { open } from 'sqlite'; // Импортируем sqlite после sqlite3
+import { hydrate } from '@grammyjs/hydrate'; // Подключаем hydrate на изменение в realtime
+
+// Мои импорты от декомпоза
+import dynamicTaskRender from './helpers/dynamicTaskRender.js';
+import setupDatabase from './db.js';
 // Logs
 // const fs = require('fs');
 // const path = require('path');
 // const Logs = path.join(__dirname, 'Logs');
+
+sqlite3.verbose()
 
 const bot = new Bot(process.env.BOT_API_KEY); // API нашего бота
 bot.use(hydrate()); // Применяем hydrate middleware
@@ -19,28 +25,31 @@ bot.start(); // Запуск бота
 
 
 
-// Подключаем базу данных SQLite
-async function setupDatabase() {
-	const db = await sqlite.open({
-		filename: './todolist.db',
-		driver: sqlite3.Database,
-	});
+// // Подключаем базу данных SQLite
+// async function setupDatabase() {
+// 	const db = await sqlite.open({
+// 		filename: './todolist.db',
+// 		driver: sqlite3.Database,
+// 	});
 
-	// Нужен BIGINT в user_id
+// 	// Нужен BIGINT в user_id
 
-	await db.run(`
-        CREATE TABLE IF NOT EXISTS todos (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER,
-            task TEXT,
-            priority INTEGER DEFAULT 1
-        )
-    `);
+// 	await db.run(`
+//         CREATE TABLE IF NOT EXISTS todos (
+//             id INTEGER PRIMARY KEY AUTOINCREMENT,
+//             user_id INTEGER,
+//             task TEXT,
+//             priority INTEGER DEFAULT 1
+//         )
+//     `);
 
-	return db;
-}
+// 	return db;
+// }
+
 
 const dbPromise = setupDatabase();
+
+
 // Спислк методов по задачам
 const todoAPI = {
 	getTodos: async function (ctx) {
@@ -60,20 +69,6 @@ bot.api.setMyCommands([
 	}
 ])
 
-function dynamicTaskRender(tasks) {
-	const taskKeyboard = new InlineKeyboard();
-
-	tasks.forEach((task, index) => {
-		taskKeyboard.text(task.task, `task_${task.id}`).row();
-	});
-
-	// taskKeyboard.row();  // Разделяем ряд задач и кнопку добавления новой задачи
-	taskKeyboard.text('🆕', 'create');
-	// // taskKeyboard.row();  // Добавляем кнопку "Вернуться в меню"
-	// taskKeyboard.text('↩️', 'main_menu');
-
-	return taskKeyboard;
-}
 
 // Command Start
 

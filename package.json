@@ -10,6 +10,7 @@
     "sqlite3": "^5.1.7"
   },
   "name": "todobot",
+  "type": "module",
   "version": "1.0.0",
   "description": "todobot",
   "main": "main.js",
