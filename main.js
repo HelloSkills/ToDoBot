@@ -24,29 +24,6 @@ bot.use(session({ initial: () => ({ creatingTask: false }) })); // Подклю�
 bot.start(); // Запуск бота
 
 
-
-// // Подключаем базу данных SQLite
-// async function setupDatabase() {
-// 	const db = await sqlite.open({
-// 		filename: './todolist.db',
-// 		driver: sqlite3.Database,
-// 	});
-
-// 	// Нужен BIGINT в user_id
-
-// 	await db.run(`
-//         CREATE TABLE IF NOT EXISTS todos (
-//             id INTEGER PRIMARY KEY AUTOINCREMENT,
-//             user_id INTEGER,
-//             task TEXT,
-//             priority INTEGER DEFAULT 1
-//         )
-//     `);
-
-// 	return db;
-// }
-
-
 const dbPromise = setupDatabase();
 
 
@@ -59,6 +36,9 @@ const todoAPI = {
 	}
 }
 
+// TEMP userMessageSend
+// const userMessageSend = 297554360;
+// bot.api.sendMessage(userMessageSend, "Хм);
 
 // Start Bot
 
@@ -68,6 +48,10 @@ bot.api.setMyCommands([
 		description: 'Список дел',
 	}
 ])
+
+// Menu Bot
+const startMenuKeyboard = new InlineKeyboard()
+	.text('Создать новую запись', 'create')
 
 
 // Command Start
@@ -80,7 +64,7 @@ bot.command('start', async (ctx) => {
 	let welcomeText = `Ваш список заметок пуст`
 	let replyMarkup = startMenuKeyboard
 	if (tasks.length > 0) {
-		welcomeText = `Ваши заметки: ${tasks.length}`
+		welcomeText = `Заметки: ${tasks.length}`
 		replyMarkup = dynamicTaskRender(tasks)
 	}
 
@@ -90,69 +74,12 @@ bot.command('start', async (ctx) => {
 	});
 });
 
-// Menu Bot
-const startMenuKeyboard = new InlineKeyboard()
-	.text('Создать новую запись', 'create')
-
-
-// Клавиатура списка задач с кнопкой "Вернуться в меню"
-const taskMenuKeyboard = new InlineKeyboard()
-	.text('Открыть список', 'todolist').row()
-	.text('Создать запись', 'create')
-	.text('Изменить запись', 'update').row()
-	.text('Удалить запись', 'delete')
-	.text('Изменить приоритет', 'priority').row()
-	.text('🏠 Вернуться в меню', 'main_menu');
-
 
 // Клавиатура редактирования задачи
 const editTaskKeyboard = new InlineKeyboard()
-	.text('Изменить задачу', 'edit_task').row()
-	.text('Удалить задачу', 'delete_task').row()
-	.text('Изменить приоритет', 'update_priority').row()
+	.text('Изменить заметку', 'edit_task').row()
+	.text('Удалить заметку', 'delete_task').row()
 	.text('🏠 Вернуться в меню', 'main_menu');
-
-
-// Callback на todolist
-
-// Обработчик кнопки "Открыть список"
-bot.callbackQuery('todolist', async (ctx) => {
-	const db = await dbPromise;
-	const tasks = await db.all('SELECT * FROM todos WHERE user_id = ? ORDER BY priority DESC', [ctx.from.id]);
-
-	if (tasks.length === 0) {
-		await ctx.editMessageText('Ваш список пуст.', {
-			reply_markup: { remove_keyboard: true }
-		});
-	} else {
-		let message = 'Ваши задачи:\n';
-		const taskKeyboard = new InlineKeyboard();
-
-		tasks.forEach((task, index) => {
-			taskKeyboard.text(task.task, `task_${task.id}`).row();
-		});
-
-		// taskKeyboard.row();  // Разделяем ряд задач и кнопку добавления новой задачи
-		taskKeyboard.text('🆕', 'create');
-		// taskKeyboard.row();  // Добавляем кнопку "Вернуться в меню"
-		taskKeyboard.text('↩️', 'main_menu');
-
-		await ctx.editMessageText(message, {
-			reply_markup: taskKeyboard,
-		});
-	}
-	console.log(`Пользователь ${ctx.from.username} и ID: ${ctx.from.id} запросил список задач`);
-});
-
-// Обработчик кнопки "Вернуться в меню"
-bot.callbackQuery('main_menu', async (ctx) => {
-	await ctx.editMessageText('*Нажмите кнопку*', {
-		parse_mode: 'MarkdownV2',
-		reply_markup: startMenuKeyboard
-	});
-
-	console.log(`Пользователь ${ctx.from.username} и ID: ${ctx.from.id} вернулся в главное меню.`);
-});
 
 
 // Callback start menu
@@ -164,7 +91,7 @@ bot.callbackQuery('start_menu', async (ctx) => {
 	let welcomeText = `Ваш список заметок пуст`
 	let replyMarkup = startMenuKeyboard
 	if (tasks.length > 0) {
-		welcomeText = `Ваши заметки: ${tasks.length}`
+		welcomeText = `Заметок: ${tasks.length}`
 		replyMarkup = dynamicTaskRender(tasks)
 	}
 
@@ -174,6 +101,23 @@ bot.callbackQuery('start_menu', async (ctx) => {
 	});
 });
 
+// Обработчик кнопки "Вернуться в меню"
+bot.callbackQuery('main_menu', async (ctx) => {
+
+	let tasks = await todoAPI.getTodos(ctx);
+	let message = `Заметок: ${tasks.length}`;
+	let replyMarkup = dynamicTaskRender(tasks)
+
+	await ctx.editMessageText(message, {
+		reply_markup: replyMarkup
+	});
+
+	console.log(`Пользователь ${ctx.from.username} и ID: ${ctx.from.id} вернулся в главное меню.`);
+});
+
+
+
+
 // Callback create
 bot.callbackQuery('create', async (ctx) => {
 	// Устанавливаем состояние создания задачи
@@ -182,7 +126,7 @@ bot.callbackQuery('create', async (ctx) => {
 	const taskKeyboard = new InlineKeyboard();
 	taskKeyboard.text('Отмена', 'start_menu');
 
-	let newNotion = `Напишите Вашу новую заметку`
+	let newNotion = `Напишите новую заметку`
 
 	await ctx.editMessageText(newNotion, {
 		parse_mode: 'MarkdownV2',
@@ -202,14 +146,24 @@ bot.on('message:text', async (ctx) => {
 		// Сохраняем задачу в базу данных
 		await db.run('INSERT INTO todos (user_id, task) VALUES (?, ?)', [ctx.from.id, taskText]);
 		tasks = await todoAPI.getTodos(ctx);
-		await ctx.reply('Ваша новая заметка добавлена в список.');
-		console.log(`Пользователь ${ctx.from.username} и ID: ${ctx.from.id} добавил новую запись: ${taskText}`);
 
-		let message = `Список записей: ${tasks.length}`;
+		let message = `Ваша новая заметка добавлена \n\nСписок записей: ${tasks.length}`;
 		let replyMarkup = dynamicTaskRender(tasks)
+
+		// await ctx.reply('Ваша новая заметка добавлена в список.');
+
 		await ctx.reply(message, {
 			reply_markup: replyMarkup
 		});
+
+
+		console.log(`Пользователь ${ctx.from.username} и ID: ${ctx.from.id} добавил новую запись: ${taskText}`);
+
+		// let message = `Список записей: ${tasks.length}`;
+		// let replyMarkup = dynamicTaskRender(tasks)
+		// await ctx.reply(message, {
+		// 	reply_markup: replyMarkup
+		// });
 
 		// Сбрасываем состояние создания задачи
 		ctx.session.creatingTask = false;
@@ -218,7 +172,17 @@ bot.on('message:text', async (ctx) => {
 		// Обновляем задачу в базе данных
 		await db.run('UPDATE todos SET task = ? WHERE id = ?', [taskText, ctx.session.updatingTaskId]);
 
-		await ctx.reply('Задача обновлена.');
+		let tasks = await todoAPI.getTodos(ctx);
+		let message = `Запись обновлена \n\nСписок записей: ${tasks.length}`;
+		let replyMarkup = dynamicTaskRender(tasks)
+
+		// await ctx.reply('Задача обновлена.');
+
+		await ctx.reply(message, {
+			reply_markup: replyMarkup
+		});
+
+
 		console.log(`Пользователь ${ctx.from.username} и ID: ${ctx.from.id} обновил задачу ID: ${ctx.session.updatingTaskId} на: ${taskText}`);
 
 		// Сбрасываем состояние обновления задачи
@@ -259,7 +223,7 @@ bot.callbackQuery(/^task_\d+$/, async (ctx) => {
 		ctx.session.updatingTaskId = taskId;
 		ctx.session.creatingTask = false; // Сброс состояния создания задачи
 
-		await ctx.reply(`Вы выбрали задачу:\n\n${task.task}`, {
+		await ctx.editMessageText(`Выбрана заметка:\n\n${task.task}`, {
 			reply_markup: editTaskKeyboard
 		});
 
@@ -281,7 +245,7 @@ bot.callbackQuery(/^task_update_\d+$/, async (ctx) => {
 	});
 });
 
-// Обработчик нажатия на "Изменить задачу"
+// Обработчик нажатия на "Изменить заметку"
 bot.callbackQuery('edit_task', async (ctx) => {
 	if (ctx.session.updatingTaskId) {
 		await ctx.reply('Введите новый текст для задачи:');
@@ -289,68 +253,29 @@ bot.callbackQuery('edit_task', async (ctx) => {
 	}
 });
 
-// Обработчик нажатия на "Удалить задачу"
+// Обработчик нажатия на "Удалить заметку"
 bot.callbackQuery('delete_task', async (ctx) => {
 	if (ctx.session.updatingTaskId) {
 		const db = await dbPromise;
 		await db.run('DELETE FROM todos WHERE id = ?', [ctx.session.updatingTaskId]);
+		let tasks = await todoAPI.getTodos(ctx);
+		let message = `Запись удалена \n\nЗаметок: ${tasks.length}`;
+		let replyMarkup = dynamicTaskRender(tasks)
 
-		await ctx.reply('Задача удалена.');
+		// await ctx.reply('Задача удалена.');
+
+		await ctx.editMessageText(message, {
+			reply_markup: replyMarkup
+		});
+
 		console.log(`Пользователь ${ctx.from.username} и ID: ${ctx.from.id} удалил задачу ID: ${ctx.session.updatingTaskId}`);
 
-
-		let message = 'Нажмите кнопку';
-		await ctx.reply(message, {
-			reply_markup: taskMenuKeyboard
-		});
 		ctx.session.updatingTaskId = null;
 	}
 });
 
-// Обработчик нажатия на "Изменить приоритет"
-bot.callbackQuery('update_priority', async (ctx) => {
-	if (ctx.session.updatingTaskId) {
-		await ctx.reply('Введите новый приоритет для задачи:');
-		console.log(`Пользователь ${ctx.from.username} и ID: ${ctx.from.id} хочет изменить приоритет задачи ID: ${ctx.session.updatingTaskId}`);
-	}
-});
 
-// Обработчик сообщений для изменения задачи
-bot.on('message:text', async (ctx) => {
-	const db = await dbPromise;
-	const taskText = ctx.message.text;
 
-	if (ctx.session.creatingTask) {
-		// Сохраняем задачу в базу данных
-		await db.run('INSERT INTO todos (user_id, task) VALUES (?, ?)', [ctx.from.id, taskText]);
-
-		await ctx.reply('Запись добавлена в список дел.');
-		console.log(`Пользователь ${ctx.from.username} и ID: ${ctx.from.id} добавил новую запись: ${taskText}`);
-
-		ctx.session.creatingTask = false;
-
-	} else if (ctx.session.updatingTaskId) {
-		if (ctx.callbackQuery.data.startsWith('update_priority')) {
-			// Обновляем приоритет задачи
-			const priority = parseInt(taskText, 10);
-			if (isNaN(priority)) {
-				await ctx.reply('Пожалуйста, введите корректный приоритет.');
-				return;
-			}
-			await db.run('UPDATE todos SET priority = ? WHERE id = ?', [priority, ctx.session.updatingTaskId]);
-
-			await ctx.reply('Приоритет задачи обновлен.');
-		} else {
-			// Обновляем текст задачи
-			await db.run('UPDATE todos SET task = ? WHERE id = ?', [taskText, ctx.session.updatingTaskId]);
-
-			await ctx.reply('Задача обновлена.');
-			console.log(`Пользователь ${ctx.from.username} и ID: ${ctx.from.id} обновил задачу ID: ${ctx.session.updatingTaskId} на: ${taskText}`);
-		}
-
-		ctx.session.updatingTaskId = null;
-	}
-});
 
 
 
