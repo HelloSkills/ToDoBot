@@ -11,7 +11,7 @@ import botController from './app/bot-controller.js';
 
 // Мои импорты от декомпоза
 import dynamicTaskRender from './helpers/dynamicTaskRender.js';
-import setupDatabase from './db.js';
+
 // Logs
 // const fs = require('fs');
 // const path = require('path');
@@ -23,9 +23,6 @@ const bot = new Bot(process.env.BOT_API_KEY); // API нашего бота
 bot.use(hydrate()); // Применяем hydrate middleware
 bot.use(session({ initial: () => ({ creatingTask: false }) })); // Подключение сессии
 bot.start(); // Запуск бота
-
-
-const dbPromise = setupDatabase();
 
 
 // TEMP userMessageSend
@@ -161,8 +158,6 @@ bot.on('message:text', async (ctx) => {
 
 	console.log(`Пользователь ${ctx.from.username} отправил: ${ctx.message.text}`)
 
-
-	const db = await dbPromise;
 	const todoText = ctx.message.text;
 	let tasks = await botController.getTodos(ctx);
 
