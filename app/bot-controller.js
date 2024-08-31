@@ -12,6 +12,12 @@ const botController = {
 		return todo
 	},
 
+	deleteTodoByID: async function (todoID) {
+		const todo = await Todo.deleteTodoByID(todoID)
+		return todo
+	},
+
+
 	getTodoByID: async function (todoID) {
 		const todo = await Todo.getTodoByID(todoID)
 		return todo

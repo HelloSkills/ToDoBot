@@ -224,8 +224,8 @@ bot.callbackQuery('edit_task', async (ctx) => {
 // Обработчик нажатия на "Удалить заметку"
 bot.callbackQuery('delete_task', async (ctx) => {
 	if (ctx.session.updatingTaskId) {
-		const db = await dbPromise;
-		await db.run('DELETE FROM todos WHERE id = ?', [ctx.session.updatingTaskId]);
+
+		await botController.deleteTodoByID(ctx.session.updatingTaskId);
 		let tasks = await botController.getTodos(ctx);
 		let message = `Запись удалена \n\nЗаметок: ${tasks.length}`;
 		let replyMarkup = dynamicTaskRender(tasks)

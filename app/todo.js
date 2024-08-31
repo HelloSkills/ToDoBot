@@ -13,6 +13,10 @@ const Todo = {
 		return task;
 	},
 
+	deleteTodoByID: async function (todoID) {
+		await this.db.run('DELETE FROM todos WHERE id = ?', [todoID]);
+	},
+
 	getTodoByID: async function (todoID) {
 		const task = await this.db.get('SELECT * FROM todos WHERE id = ?', [todoID]);
 		return task;
