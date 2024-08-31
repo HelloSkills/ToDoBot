@@ -7,6 +7,16 @@ const botController = {
 		return todo
 	},
 
+	updateTodoByID: async function (todoID, todoText) {
+		const todo = await Todo.updateTodoByID(todoID, todoText)
+		return todo
+	},
+
+	getTodoByID: async function (todoID) {
+		const todo = await Todo.getTodoByID(todoID)
+		return todo
+	},
+
 	getTodos: async function (ctx) {
 		const todos = await Todo.getTodos(ctx.from.id)
 		return todos

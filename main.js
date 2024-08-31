@@ -139,8 +139,7 @@ bot.callbackQuery('create', async (ctx) => {
 bot.callbackQuery(/^task_\d+$/, async (ctx) => {
 	const taskId = ctx.callbackQuery.data.split('_')[1]; // Получаем ID задачи
 
-	const db = await dbPromise;
-	const task = await db.get('SELECT * FROM todos WHERE id = ?', [taskId]); // Получаем задачу из базы данных
+	let task = await botController.getTodoByID(taskId); // Получаем задачу из базы данных
 
 	if (task) {
 		ctx.session.updatingTaskId = taskId;
@@ -192,7 +191,7 @@ bot.on('message:text', async (ctx) => {
 
 	} else if (ctx.session.updatingTaskId) {
 		// Обновляем задачу в базе данных
-		await db.run('UPDATE todos SET task = ? WHERE id = ?', [todoText, ctx.session.updatingTaskId]);
+		await botController.updateTodoByID(todoText, ctx.session.updatingTaskId);
 
 		let tasks = await botController.getTodos(ctx);
 		let message = `Запись обновлена \n\nСписок записей: ${tasks.length}`;
