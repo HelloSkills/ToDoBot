@@ -8,6 +8,7 @@ import sqlite3 from 'sqlite3'; // Подключение БД
 import { open } from 'sqlite'; // Импортируем sqlite после sqlite3
 import { hydrate } from '@grammyjs/hydrate'; // Подключаем hydrate на изменение в realtime
 import botController from './app/bot-controller.js';
+// import punycode from 'punycode'; // вместо встроенного
 
 // Мои импорты от декомпоза
 import dynamicTaskRender from './helpers/dynamicTaskRender.js';
@@ -26,8 +27,8 @@ bot.start(); // Запуск бота
 
 
 // TEMP userMessageSend
-// const userMessageSend = 297554360;
-// bot.api.sendMessage(userMessageSend, "Хм);
+// const userMessageSend = 418814235;
+// bot.api.sendMessage(userMessageSend, "хм");
 
 // Start Bot
 
