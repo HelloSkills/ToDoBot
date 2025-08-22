@@ -26,7 +26,17 @@ const botController = {
 	getTodos: async function (ctx) {
 		const todos = await Todo.getTodos(ctx.from.id)
 		return todos
+	},
+
+	completeTodoByID: async function (todoID) {
+		await Todo.completeTodoByID(todoID)
+	},
+
+	getTodosCompleted: async function (ctx) {
+		const todos = await Todo.getTodosCompleted(ctx.from.id)
+		return todos
 	}
+
 
 }
 

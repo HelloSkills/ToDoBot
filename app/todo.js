@@ -18,14 +18,23 @@ const Todo = {
 	},
 
 	getTodoByID: async function (todoID) {
-		const task = await this.db.get('SELECT * FROM todos WHERE id = ?', [todoID]);
+		const task = await this.db.get('SELECT * FROM todos WHERE id = ? AND is_completed = 0 ', [todoID]);
 		return task;
 	},
 
 	getTodos: async function (userID) {
-		const tasks = await this.db.all('SELECT * FROM todos WHERE user_id = ? ORDER BY priority DESC', [userID]);
+		const tasks = await this.db.all('SELECT * FROM todos WHERE user_id = ? AND is_completed = 0', [userID]);
 		return tasks;
-	}
+	},
+
+	completeTodoByID: async function (todoID) {
+		await this.db.run('UPDATE todos SET is_completed = 1 WHERE id = ?', [todoID]);
+	},
+
+	getTodosCompleted: async function (userID) {
+		const tasks = await this.db.all('SELECT * FROM todos WHERE user_id = ? AND is_completed = 1', [userID]);
+		return tasks;
+	},
 
 }
 
